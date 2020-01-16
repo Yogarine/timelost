@@ -30,7 +30,7 @@ class Room
      */
     public function __construct(string $symbol, array $links)
     {
-        $symbol = strtolower($symbol);
+        $symbol       = $this->parseSymbol($symbol);
         $this->symbol = strtolower(trim($symbol));
         $this->links  = $links;
         $this->id     = self::$idIncrement++;
@@ -64,6 +64,11 @@ class Room
         }
 
         return $matchingLinks;
+    }
+
+    public function parseSymbol(string $symbol)
+    {
+        return strtoupper(substr($symbol, 0, 1));
     }
 
     /**

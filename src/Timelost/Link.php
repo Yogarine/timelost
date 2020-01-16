@@ -32,6 +32,21 @@ class Link
     }
 
     /**
+     * @param Room $room
+     * @return Room|null
+     */
+    public function getOtherRoom(Room $room): ?Room
+    {
+        foreach ($this->rooms as $otherRoom) {
+            if ($otherRoom->id != $room->id) {
+                return $otherRoom;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @return int[]
      */
     public function getRoomIds(): array
