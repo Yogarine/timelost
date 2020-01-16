@@ -24,7 +24,6 @@ class Room
     public $links;
 
     /**
-     * Room constructor.
      * @param string $symbol
      * @param Link[] $links
      */
@@ -49,21 +48,45 @@ class Room
         }
     }
 
-    public function rotate($amount): void
+    /**
+     * @param int $amount
+     */
+    public function rotate(int $amount): void
     {
+        if (0 == $amount) {
+            return;
+        }
+
         $newLinks = [];
 
         foreach ($this->links as $position => $link) {
-            $newPosition = $position + $amount;
-
-            if ($newPosition > 6) {
-                $newPosition -= 6;
-            }
-
+            $newPosition = $this->rotatePosition($position, $amount);
             $newLinks[$newPosition] = $link;
         }
 
         $this->links = $newLinks;
+    }
+
+    /**
+     * @param int $position
+     * @param int $amount
+     * @return int
+     */
+    public function rotatePosition(int $position, int $amount): int
+    {
+        if (0 == $amount) {
+            return $position;
+        }
+
+        $newPosition = $position + $amount;
+
+        if ($newPosition > 6) {
+            $newPosition -= 6;
+        } elseif ($newPosition < 1) {
+            $newPosition += 6;
+        }
+
+        return $newPosition;
     }
 
     /**
@@ -74,8 +97,13 @@ class Room
         foreach ($this->links as $position => $link) {
             $otherRoom = $link->getOtherRoom($this);
             if ($otherRoom) {
-                $referencePosition = $otherRoom->getMatchingLinkPosition($link);
-                $this->rotate($referencePosition - $position);
+                $matchingLinkPosition = $otherRoom->getMatchingLinkPosition($link);
+                $referencePosition = $this->rotatePosition($matchingLinkPosition, 3);
+                $diff = $referencePosition - $position;
+
+                if (0 != $diff) {
+                    $this->rotate($diff);
+                }
             }
         }
     }
@@ -113,7 +141,11 @@ class Room
         return $matchingLinks;
     }
 
-    public function parseSymbol(string $symbol)
+    /**
+     * @param string $symbol
+     * @return string
+     */
+    public function parseSymbol(string $symbol): string
     {
         return strtoupper(substr($symbol, 0, 1));
     }

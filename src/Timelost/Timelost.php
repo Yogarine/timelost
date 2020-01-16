@@ -17,7 +17,7 @@ class Timelost
     /**
      * @var Room[]
      */
-    public $endpoints = [];
+    public $entrypoints = [];
 
     /**
      * @var Room[]
@@ -68,7 +68,6 @@ class Timelost
                 $linkCode = strtoupper(trim($linkCode));
 
                 $isOpening = false !== strpos($openings, (string) $linkPosition);
-if ($isOpening) echo "==========\n";
 
                 if (
                     $isOpening && (
@@ -79,7 +78,6 @@ if ($isOpening) echo "==========\n";
                     $linkCode   = 'TTTTTT' . self::$endpointIncrement++;
                     $isEndpoint = true;
                 }
-echo "{$linkPosition}: {$linkCode} ({$openings})\n";
 
                 if ('BBBBBBB' == $linkCode || 'BLANK'   == $linkCode || '' == $linkCode) {
                     continue;
@@ -96,23 +94,84 @@ echo "{$linkPosition}: {$linkCode} ({$openings})\n";
 
                 $links[$linkPosition] = $this->links[$linkCode];
             }
+
             if (! $this->roomWithLinksAlreadyExists($links)) {
                 $room = new Room($symbol, $links);
                 $this->rooms[$room->id] = $room;
 
                 if ($isEndpoint) {
-                    $this->endpoints[$room->id] = $room;
+                    $this->entrypoints[$room->id] = $room;
                 }
+            }
+        }
+
+        unset($csvFile);
+
+        foreach ($this->entrypoints as $room) {
+            $grid = [];
+            $this->addRoomToGridRecursively($room, $grid);
+
+            ksort($grid);
+
+            foreach ($grid as $column => &$data) {
+                ksort($data);
             }
         }
     }
 
-    public function addRoomToGridRecursively(Room $room, &$grid = [], $row = 0, $column = 0)
+    /**
+     * @param Room $room
+     * @param array $grid
+     * @param int $row
+     * @param int $column
+     * @return void
+     *
+     * @throws Exception
+     */
+    public function addRoomToGridRecursively(Room $room, array &$grid = [], int $row = 0, int $column = 0): void
     {
-        $grid[$row][$column] = $room;
+        if (isset($grid[$column][$row])) {
+            if ($grid[$column][$row]->id != $room->id) {
+                throw new Exception("Got room inconsistency!");
+            } else {
+                return;
+            }
+        }
+        $grid[$column][$row] = $room;
 
-        foreach ($room->links as $link) {
+        foreach ($room->links as $linkPosition => $link) {
+            $otherRoom = $link->getOtherRoom($room);
+            if ($otherRoom) {
+                [$relativeRow, $relativeColumn] = $this->getRelativeGridCoordinatesForLinkPosition($linkPosition, $row, $column);
+                $this->addRoomToGridRecursively($otherRoom, $grid, $relativeRow, $relativeColumn);
+            }
+        }
+    }
 
+    /**
+     * @param int $linkPosition
+     * @param int $row
+     * @param int $column
+     * @return array
+     * @throws Exception
+     */
+    public function getRelativeGridCoordinatesForLinkPosition(int $linkPosition, int $row, int $column)
+    {
+        switch ($linkPosition) {
+            case 1:
+                return [$row - ($column % 2), $column + 1];
+            case 2:
+                return [$row + 1 - ($column % 2), $column + 1];
+            case 3:
+                return [$row + 1, $column];
+            case 4:
+                return [$row + 1 - ($column % 2), $column -1];
+            case 5:
+                return [$row - ($column % 2), $column - 1];
+            case 6:
+                return [$row -1, $column];
+            default:
+                throw new Exception("Invalid Link position: '{$linkPosition}'");
         }
     }
 
@@ -127,7 +186,7 @@ echo "{$linkPosition}: {$linkCode} ({$openings})\n";
         $links = [];
 
         $dot = "digraph sample {\n";
-        $dotLinks = $this->createDotRecursively(reset($this->endpoints), $rooms, $links);
+        $dotLinks = $this->createDotRecursively(reset($this->entrypoints), $rooms, $links);
 
         foreach ($links as $link) {
             $dot .= "    link{$link->code} [label=\"{$link->code}\"];\n";
