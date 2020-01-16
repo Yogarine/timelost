@@ -1,0 +1,63 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "f2afd9b09efdc0cb12cf74244b93a062",
+    "packages": [
+        {
+            "name": "yogarine/csv-utils",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Yogarine/csv-utils.git",
+                "reference": "8c584954725ccb57314486633da3b8db1fc2b996"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Yogarine/csv-utils/zipball/8c584954725ccb57314486633da3b8db1fc2b996",
+                "reference": "8c584954725ccb57314486633da3b8db1fc2b996",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=4.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Yogarine\\CsvUtils\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-2-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Alwin Garside",
+                    "email": "alwin@garsi.de",
+                    "role": "Developer"
+                }
+            ],
+            "description": "CSV utils by Yogarine",
+            "homepage": "https://github.com/Yogarine/csv-utils",
+            "keywords": [
+                "csv",
+                "util"
+            ],
+            "time": "2019-08-20T14:03:58+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}

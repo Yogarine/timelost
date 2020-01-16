@@ -1,0 +1,10 @@
+{
+    "autoload": {
+        "psr-4": {
+            "Yogarine\\": "src/"
+        }
+    },
+    "require": {
+        "yogarine/csv-utils": "^1.0"
+    }
+}
