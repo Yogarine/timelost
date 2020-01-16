@@ -61,13 +61,13 @@ class Timelost
             $isEndpoint = false;
 
             $links = [];
-            foreach ($linkCodes as $key => $linkCode) {
+            foreach ($linkCodes as $linkPosition => $linkCode) {
                 // Do some normalizing
                 $linkCode = str_replace(' ', '', $linkCode);
                 $linkCode = str_replace('_', 'B', $linkCode);
                 $linkCode = strtoupper(trim($linkCode));
 
-                $isOpening = false !== strpos($openings, (string) $key);
+                $isOpening = false !== strpos($openings, (string) $linkPosition);
 if ($isOpening) echo "==========\n";
 
                 if (
@@ -79,7 +79,7 @@ if ($isOpening) echo "==========\n";
                     $linkCode   = 'TTTTTT' . self::$endpointIncrement++;
                     $isEndpoint = true;
                 }
-echo "{$key}: {$linkCode} ({$openings})\n";
+echo "{$linkPosition}: {$linkCode} ({$openings})\n";
 
                 if ('BBBBBBB' == $linkCode || 'BLANK'   == $linkCode || '' == $linkCode) {
                     continue;
@@ -94,7 +94,7 @@ echo "{$key}: {$linkCode} ({$openings})\n";
                     $this->links[$linkCode] = new Link($linkCode, $isOpening);
                 }
 
-                $links[] = $this->links[$linkCode];
+                $links[$linkPosition] = $this->links[$linkCode];
             }
             if (! $this->roomWithLinksAlreadyExists($links)) {
                 $room = new Room($symbol, $links);
@@ -105,15 +105,15 @@ echo "{$key}: {$linkCode} ({$openings})\n";
                 }
             }
         }
-
-
-
     }
 
-    public function generateGrid()
+    public function addRoomToGridRecursively(Room $room, &$grid = [], $row = 0, $column = 0)
     {
-        // start with the endpoint
+        $grid[$row][$column] = $room;
 
+        foreach ($room->links as $link) {
+
+        }
     }
 
     /**
@@ -192,7 +192,7 @@ echo "{$key}: {$linkCode} ({$openings})\n";
     public function roomWithLinksAlreadyExists(array $links)
     {
         foreach ($this->rooms as $room) {
-            $matchingLinks = $room->matchLinks($links);
+            $matchingLinks = $room->getMatchingLinks($links);
             if (count($matchingLinks) > 1) {
 //echo "room got a duplicate: " . implode(',', $room->linkCodes()) . PHP_EOL;
                 return true;

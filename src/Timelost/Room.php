@@ -35,6 +35,8 @@ class Room
         $this->links  = $links;
         $this->id     = self::$idIncrement++;
 
+        $this->ensureCorrectOrientation();
+
         foreach ($this->links as $link) {
             $link->rooms[$this->id] = $this;
         }
@@ -47,18 +49,63 @@ class Room
         }
     }
 
+    public function rotate($amount): void
+    {
+        $newLinks = [];
+
+        foreach ($this->links as $position => $link) {
+            $newPosition = $position + $amount;
+
+            if ($newPosition > 6) {
+                $newPosition -= 6;
+            }
+
+            $newLinks[$newPosition] = $link;
+        }
+
+        $this->links = $newLinks;
+    }
+
+    /**
+     * @return void
+     */
+    public function ensureCorrectOrientation(): void
+    {
+        foreach ($this->links as $position => $link) {
+            $otherRoom = $link->getOtherRoom($this);
+            if ($otherRoom) {
+                $referencePosition = $otherRoom->getMatchingLinkPosition($link);
+                $this->rotate($referencePosition - $position);
+            }
+        }
+    }
+
+    /**
+     * @param Link $link
+     * @return int|null
+     */
+    public function getMatchingLinkPosition(Link $link): ?int
+    {
+        $matchingLinks = $this->getMatchingLinks([$link]);
+        foreach ($matchingLinks as $position => $link) {
+            return $position;
+        }
+
+        return null;
+    }
+
     /**
      * @param Link[] $links
-     * @return array
+     * @return Link[]
      */
-    public function matchLinks(array $links): array
+    public function getMatchingLinks(array $links): array
     {
         $matchingLinks = [];
 
-        foreach ($this->links as $existingLink) {
-            foreach ($links as $link) {
-                if ($existingLink->code == $link->code) {
-                    $matchingLinks[] = $link;
+        foreach ($this->links as $thisLinkPosition => $thisLink) {
+            foreach ($links as $linkPosition => $link) {
+                if ($thisLink->code == $link->code) {
+                    $matchingLinks[$thisLinkPosition] = $thisLink;
                 }
             }
         }
