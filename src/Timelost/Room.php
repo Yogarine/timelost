@@ -39,7 +39,7 @@ class Room
             if (count($link->rooms) < 2) {
                 $link->rooms[$this->id] = $this;
             } else {
-echo "[{$id}] Too many rooms for link '{$link->code}'\n";
+//                echo "[{$id}] Too many rooms for link '{$link->code}'\n";
             }
         }
     }
@@ -105,7 +105,8 @@ echo "[{$id}] Too many rooms for link '{$link->code}'\n";
                 $diff = $referencePosition - $position;
 
                 if (0 != $diff) {
-echo "[{$this->id}] Rotating by {$diff} from {$position} to {$referencePosition} to align with [{$otherRoom->id}]'s position {$matchingLinkPosition}\n";
+// TODO add this verbose only
+//echo "[{$this->id}] Rotating Room by {$diff} ({$position} -> {$referencePosition}) to align it with Room [{$otherRoom->id}]'s Link at position {$matchingLinkPosition}\n";
                     $this->rotate($diff);
                 }
             }
