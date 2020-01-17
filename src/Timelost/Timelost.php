@@ -12,7 +12,7 @@ class Timelost
     const DEFAULT_MAPPING = [
         'Center'   => 'Center',
         'Openings' => 'Openings',
-        'Link1'    => 'Link1',
+        'Link1'    => 'LINK1',
         'Link2'    => 'Link2',
         'Link3'    => 'Link3',
         'Link4'    => 'Link4',
@@ -78,7 +78,7 @@ class Timelost
                 continue;
             }
 
-            $roomId    = $key + 1;
+            $roomId    = $key + 2;
             $openings  = $row[$mapping['Openings']];
             $symbol    = $row[$mapping['Center']];
             $symbol    = strtoupper(substr($symbol, 0, 1));
