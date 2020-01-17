@@ -6,8 +6,6 @@ namespace Yogarine\Timelost;
 
 class Room
 {
-    public static $idIncrement = 0;
-
     /**
      * @var int
      */
@@ -24,20 +22,25 @@ class Room
     public $links;
 
     /**
+     * @param int $id
      * @param string $symbol
      * @param Link[] $links
      */
-    public function __construct(string $symbol, array $links)
+    public function __construct(int $id, string $symbol, array $links)
     {
         $symbol       = $this->parseSymbol($symbol);
         $this->symbol = strtolower(trim($symbol));
         $this->links  = $links;
-        $this->id     = self::$idIncrement++;
+        $this->id     = $id;
 
         $this->ensureCorrectOrientation();
 
         foreach ($this->links as $link) {
-            $link->rooms[$this->id] = $this;
+            if (count($link->rooms) < 2) {
+                $link->rooms[$this->id] = $this;
+            } else {
+echo "[{$id}] Too many rooms for link '{$link->code}'\n";
+            }
         }
     }
 
@@ -98,10 +101,11 @@ class Room
             $otherRoom = $link->getOtherRoom($this);
             if ($otherRoom) {
                 $matchingLinkPosition = $otherRoom->getMatchingLinkPosition($link);
-                $referencePosition = $this->rotatePosition($matchingLinkPosition, 3);
+                $referencePosition    = $this->rotatePosition($matchingLinkPosition, 3);
                 $diff = $referencePosition - $position;
 
                 if (0 != $diff) {
+echo "[{$this->id}] Rotating by {$diff} from {$position} to {$referencePosition} to align with [{$otherRoom->id}]'s position {$matchingLinkPosition}\n";
                     $this->rotate($diff);
                 }
             }
@@ -153,7 +157,7 @@ class Room
     /**
      * @return string[]
      */
-    public function linkCodes(): array
+    public function getLinkCodes(): array
     {
         $linkCodes = [];
         foreach ($this->links as $link) {

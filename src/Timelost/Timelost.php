@@ -9,6 +9,39 @@ use Yogarine\CsvUtils\CsvFile;
 
 class Timelost
 {
+    const DEFAULT_MAPPING = [
+        'Center'   => 'Center',
+        'Openings' => 'Openings',
+        'Link1'    => 'Link1',
+        'Link2'    => 'Link2',
+        'Link3'    => 'Link3',
+        'Link4'    => 'Link4',
+        'Link5'    => 'Link5',
+        'Link6'    => 'Link6',
+    ];
+
+    const OG_MAPPING = [
+        'Center'   => 'Big Symbol',
+        'Openings' => 'Openings',
+        'Link1'    => 'A Combo',
+        'Link2'    => 'B Combo',
+        'Link3'    => 'C Combo',
+        'Link4'    => 'D Combo',
+        'Link5'    => 'E Combo',
+        'Link6'    => 'F Combo',
+    ];
+
+    const NO_MAPPING = [
+        'Center'   => 1,
+        'Openings' => 2,
+        'Link1'    => 3,
+        'Link2'    => 4,
+        'Link3'    => 5,
+        'Link4'    => 6,
+        'Link5'    => 7,
+        'Link6'    => 8,
+    ];
+
     /**
      * @var int
      */
@@ -32,47 +65,58 @@ class Timelost
     /**
      * @param string[] $argv
      * @param int      $argc
+     * @param array    $mapping
      * @throws Exception
      */
-    public function main($argv, $argc)
+    public function main($argv, $argc, $mapping = self::DEFAULT_MAPPING)
     {
         $csvFile = new CsvFile($argv[1]);
 
-        foreach ($csvFile as $row) {
-            if (! isset($row['Link1']) && ! isset($row['A Combo'])) {
+        foreach ($csvFile as $key => $row) {
+            if (! isset($row[$mapping['Link1']])) {
                 // Skip apparently empty lines
                 continue;
             }
 
-            $symbol = isset($row['Center']) ? $row['Center'] : $row['Big Symbol'];
-            $symbol = strtoupper(substr($symbol, 0, 1));
-
-            $openings = $row['Openings'];
-
+            $roomId    = $key + 1;
+            $openings  = $row[$mapping['Openings']];
+            $symbol    = $row[$mapping['Center']];
+            $symbol    = strtoupper(substr($symbol, 0, 1));
             $linkCodes = [
-                1 => isset($row['Link1']) ? $row['Link1'] : $row['A Combo'],
-                2 => isset($row['Link2']) ? $row['Link2'] : $row['B Combo'],
-                3 => isset($row['Link3']) ? $row['Link3'] : $row['C Combo'],
-                4 => isset($row['Link4']) ? $row['Link4'] : $row['D Combo'],
-                5 => isset($row['Link5']) ? $row['Link5'] : $row['E Combo'],
-                6 => isset($row['Link6']) ? $row['Link6'] : $row['F Combo'],
+                1 => $row[$mapping['Link1']],
+                2 => $row[$mapping['Link2']],
+                3 => $row[$mapping['Link3']],
+                4 => $row[$mapping['Link4']],
+                5 => $row[$mapping['Link5']],
+                6 => $row[$mapping['Link6']],
             ];
 
-            $isEndpoint = false;
+            $openingPositions = [];
+            for ($i = 1; $i < 7; $i++) {
+                if (false !== strpos($openings, (string) $i)) {
+                    $openingPositions[$i] = $i;
+                }
+            }
 
+            if (count($openingPositions) > 5) {
+                // Discard opening position information
+echo "[{$roomId}] Discarding openings: '{$openings}'\n";
+                $openingPositions = [];
+            }
+
+            $isEndpoint = false;
             $links = [];
             foreach ($linkCodes as $linkPosition => $linkCode) {
                 // Do some normalizing
-                $linkCode = str_replace(' ', '', $linkCode);
-                $linkCode = str_replace('_', 'B', $linkCode);
-                $linkCode = strtoupper(trim($linkCode));
+                $linkCode = preg_replace('/[^BCDHPST]/', '', $linkCode);
+                $linkCode = strtoupper($linkCode);
 
-                $isOpening = false !== strpos($openings, (string) $linkPosition);
+                $isOpening = isset($openingPositions[$linkPosition]);
 
                 if (
                     $isOpening && (
-                        'BBBBBBB' == $linkCode ||
-                        'BLANK'   == $linkCode
+//                        in_array('PDDSCCH', $linkCodes) ||
+                        in_array('DHDSPTT', $linkCodes)
                     )
                 ) {
                     $linkCode   = 'TTTTTT' . self::$endpointIncrement++;
@@ -84,7 +128,7 @@ class Timelost
                 }
 
                 if (! $this->isValidLinkCode($linkCode)) {
-                    echo "'{$linkCode}' is not a valid link code!\n";
+                    echo "[{$roomId}] '{$linkCode}' is not a valid link code!\n";
                     continue;
                 }
 
@@ -95,8 +139,8 @@ class Timelost
                 $links[$linkPosition] = $this->links[$linkCode];
             }
 
-            if (! $this->roomWithLinksAlreadyExists($links)) {
-                $room = new Room($symbol, $links);
+            if (! $this->roomWithLinksAlreadyExists($links, $roomId)) {
+                $room = new Room($roomId, $symbol, $links);
                 $this->rooms[$room->id] = $room;
 
                 if ($isEndpoint) {
@@ -105,7 +149,13 @@ class Timelost
             }
         }
 
+        $csvFile = null;
         unset($csvFile);
+
+        $this->rooms = null;
+        unset($this->rooms);
+        $this->links = null;
+        unset($this->links);
 
         foreach ($this->entrypoints as $room) {
             $grid = [];
@@ -113,9 +163,21 @@ class Timelost
 
             ksort($grid);
 
+            $gridWidth = count($grid);
+            $gridHeight = 0;
+
             foreach ($grid as $column => &$data) {
+                $columnHeight = count($data);
+                if ($columnHeight > $gridHeight) {
+                    $gridHeight = $columnHeight;
+                }
+
                 ksort($data);
             }
+
+//            $image = imagecreatetruecolor(($gridWidth * 100) + 200, ($gridHeight * 100) + 200);
+
+//            imagepolygon();
         }
     }
 
@@ -128,24 +190,40 @@ class Timelost
      *
      * @throws Exception
      */
-    public function addRoomToGridRecursively(Room $room, array &$grid = [], int $row = 0, int $column = 0): void
+    public function addRoomToGridRecursively(Room $room, array &$grid, int $column = 0, int $row = 0): void
     {
-        if (isset($grid[$column][$row])) {
-            if ($grid[$column][$row]->id != $room->id) {
-                throw new Exception("Got room inconsistency!");
-            } else {
-                return;
-            }
-        }
         $grid[$column][$row] = $room;
 
-        foreach ($room->links as $linkPosition => $link) {
+        foreach ($room->links as $linkPosition => &$link) {
             $otherRoom = $link->getOtherRoom($room);
             if ($otherRoom) {
-                [$relativeRow, $relativeColumn] = $this->getRelativeGridCoordinatesForLinkPosition($linkPosition, $row, $column);
-                $this->addRoomToGridRecursively($otherRoom, $grid, $relativeRow, $relativeColumn);
+                [$relativeColumn, $relativeRow] = $this->getRelativeGridCoordinatesForLinkPosition($linkPosition, $column, $row);
+
+                if (isset($grid[$relativeColumn][$relativeRow])) {
+                    if ($grid[$relativeColumn][$relativeRow]->id != $otherRoom->id) {
+echo "[{$otherRoom->id}] Room's relative position ({$relativeColumn}, {$relativeRow}) overlaps with Room [{$grid[$relativeColumn][$relativeRow]->id}]\n";
+                    }
+                } elseif ($this->isRoomInGrid($otherRoom, $grid)) {
+echo "[{$otherRoom->id}] Room is already in grid\n";
+                    continue;
+                } else {
+                    $this->addRoomToGridRecursively($otherRoom, $grid, $relativeColumn, $relativeRow);
+                }
             }
         }
+    }
+
+    public function isRoomInGrid(Room $room, array $grid)
+    {
+        foreach ($grid as $column) {
+            foreach ($column as $row) {
+                if ($row->id == $room->id) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -155,21 +233,21 @@ class Timelost
      * @return array
      * @throws Exception
      */
-    public function getRelativeGridCoordinatesForLinkPosition(int $linkPosition, int $row, int $column)
+    public function getRelativeGridCoordinatesForLinkPosition(int $linkPosition, int $column, int $row)
     {
         switch ($linkPosition) {
             case 1:
-                return [$row - ($column % 2), $column + 1];
+                return [$column + 1, $row - ($column % 2)];
             case 2:
-                return [$row + 1 - ($column % 2), $column + 1];
+                return [$column + 1, $row + 1 - ($column % 2)];
             case 3:
-                return [$row + 1, $column];
+                return [$column,     $row + 1];
             case 4:
-                return [$row + 1 - ($column % 2), $column -1];
+                return [$column - 1, $row + 1 - ($column % 2)];
             case 5:
-                return [$row - ($column % 2), $column - 1];
+                return [$column - 1, $row - ($column % 2)];
             case 6:
-                return [$row -1, $column];
+                return [$column,     $row -1];
             default:
                 throw new Exception("Invalid Link position: '{$linkPosition}'");
         }
@@ -241,19 +319,24 @@ class Timelost
      */
     public function isValidLinkCode(string $linkCode): bool
     {
-        return preg_match('/^[BCDHPST01]{7}$/i', $linkCode) != false;
+        return preg_match('/^([BCDHPST]{7}|T{6}\d)$/i', $linkCode) != false;
     }
 
     /**
      * @param Link[] $links
+     * @param null $roomId
      * @return bool
      */
-    public function roomWithLinksAlreadyExists(array $links)
+    public function roomWithLinksAlreadyExists(array $links, $roomId = null)
     {
         foreach ($this->rooms as $room) {
             $matchingLinks = $room->getMatchingLinks($links);
             if (count($matchingLinks) > 1) {
-//echo "room got a duplicate: " . implode(',', $room->linkCodes()) . PHP_EOL;
+                $matchingLinkCodes = [];
+                foreach ($matchingLinks as $matchingLink) {
+                    $matchingLinkCodes[] = $matchingLink->code;
+                }
+echo "[{$roomId}] Room has more than one dupe link to Room [{$room->id}]: " . implode(', ', $matchingLinkCodes) . PHP_EOL;
                 return true;
             }
         }
