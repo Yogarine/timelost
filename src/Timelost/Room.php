@@ -33,8 +33,6 @@ class Room
         $this->links  = $links;
         $this->id     = $id;
 
-        $this->ensureCorrectOrientation();
-
         foreach ($this->links as $link) {
             if (count($link->rooms) < 2) {
                 $link->rooms[$this->id] = $this;
@@ -97,18 +95,29 @@ class Room
      */
     public function ensureCorrectOrientation(): void
     {
-        foreach ($this->links as $position => $link) {
-            $otherRoom = $link->getOtherRoom($this);
-            if ($otherRoom) {
-                $matchingLinkPosition = $otherRoom->getMatchingLinkPosition($link);
-                $referencePosition    = $this->rotatePosition($matchingLinkPosition, 3);
-                $diff = $referencePosition - $position;
+        foreach ($this->links as $link) {
+            $this->matchOrientation($link);
+        }
+    }
 
-                if (0 != $diff) {
+    /**
+     * @param Link $link
+     * @return void
+     */
+    public function matchOrientation(Link $link): void
+    {
+        $otherRoom = $link->getOtherRoom($this);
+
+        if ($otherRoom) {
+            $position             = $this->getLinkPosition($link);
+            $matchingLinkPosition = $otherRoom->getLinkPosition($link);
+            $referencePosition    = $this->rotatePosition($matchingLinkPosition, 3);
+            $diff                 = $referencePosition - $position;
+
+            if (0 != $diff) {
 // TODO add this verbose only
-//echo "[{$this->id}] Rotating Room by {$diff} ({$position} -> {$referencePosition}) to align it with Room [{$otherRoom->id}]'s Link at position {$matchingLinkPosition}\n";
-                    $this->rotate($diff);
-                }
+echo "[{$this->id}] Rotating Room by {$diff} ({$position} -> {$referencePosition}) to align it with Room [{$otherRoom->id}]'s Link at position {$matchingLinkPosition}\n";
+                $this->rotate($diff);
             }
         }
     }
@@ -117,7 +126,7 @@ class Room
      * @param Link $link
      * @return int|null
      */
-    public function getMatchingLinkPosition(Link $link): ?int
+    public function getLinkPosition(Link $link): ?int
     {
         $matchingLinks = $this->getMatchingLinks([$link]);
         foreach ($matchingLinks as $position => $link) {

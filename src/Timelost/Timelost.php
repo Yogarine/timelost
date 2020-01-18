@@ -10,7 +10,7 @@ use Yogarine\CsvUtils\CsvFile;
 class Timelost
 {
     const DEFAULT_MAPPING = [
-        'Center'   => 'Center',
+        'Center'   => 'center',
         'Openings' => 'Openings',
         'Link1'    => 'LINK1',
         'Link2'    => 'Link2',
@@ -89,15 +89,15 @@ class Timelost
                     continue;
                 }
 
-                $roomId = $key + 2;
+                $roomId   = $key + 2;
                 $openings = $row[$mapping['Openings']];
-                $symbol = trim($row[$mapping['Center']]);
+                $symbol   = $row[$mapping['Center']];
+                $symbol   = $this->normalizeSymbol($symbol);
 
-                if (! $symbol) {
+                if ('B' == $symbol) {
 //                    continue;
                 }
 
-                $symbol = strtoupper(substr($symbol, 0, 1));
                 $linkCodes = [
                     1 => $row[$mapping['Link1']],
                     2 => $row[$mapping['Link2']],
@@ -127,16 +127,23 @@ class Timelost
                     $isOpening = isset($openingPositions[$linkPosition]);
 
                     if (
-                        $isOpening && (
-                        in_array('PDDSCCH', $linkCodes) ||
-                        in_array('DHDSPTT', $linkCodes)
-                        )
+                        $isOpening &&
+                        'BBBBBBB' == $linkCode &&
+//                        'B' != $symbol &&
+                        ! in_array('CCHSCSS', $linkCodes) &&
+                        ! in_array('DTSSSPS', $linkCodes) &&
+                        ! in_array('BHSSTBC', $linkCodes)
+//                        (
+//                            in_array('PDDSCCH', $linkCodes) ||
+//                            in_array('DHDSPTT', $linkCodes)
+//                        )
                     ) {
                         $linkCode = 'TTTTTT' . self::$endpointIncrement++;
                         $isEndpoint = true;
+                        echo "[{$roomId}] Found entrypoint with symbol '{$symbol}'\n";
                     }
 
-                    if ('BBBBBBB' == $linkCode || 'BLANK' == $linkCode || '' == $linkCode) {
+                    if ('BBBBBBB' == $linkCode || '' == $linkCode) {
                         continue;
                     }
 
@@ -152,7 +159,7 @@ class Timelost
                     $links[$linkPosition] = $this->links[$linkCode];
                 }
 
-                if (!$this->roomWithLinksAlreadyExists($links, $roomId)) {
+                if (! $this->roomWithLinksAlreadyExists($links, $roomId)) {
                     $room = new Room($roomId, $symbol, $links);
                     $this->rooms[$room->id] = $room;
 
@@ -189,16 +196,25 @@ echo "[{$room->id}] ENTRYPOINT ========\n";
     }
 
     /**
+     * @param string $symbol
+     * @return string
+     */
+    public function normalizeSymbol(string $symbol): string
+    {
+        return strtoupper(substr(trim($symbol), 0, 1));
+    }
+
+    /**
      * @param string $linkCode
      * @return string
      */
-    public function normalizeLinkCode($linkCode): string
+    public function normalizeLinkCode(string $linkCode): string
     {
         $linkCode = strtoupper($linkCode);
+        $linkCode = str_replace('_', 'B', $linkCode);
         if ('BLANK' == $linkCode || preg_match('/^B{1,6}$/', $linkCode)) {
             $linkCode = 'BBBBBBB';
         }
-        $linkCode = str_replace('_', 'B', $linkCode);
         $linkCode = preg_replace('/[^BCDHPST]/i', '', $linkCode);
 
         return $linkCode;
@@ -235,6 +251,12 @@ echo "is already in grid\n";
                     continue;
                 } else {
 echo "linked\n";
+                    $otherRoom->matchOrientation($link);
+
+                    if (isset($this->entrypoints[$otherRoom->id])) {
+                        echo "[{$otherRoom->id}] ========== REACHED ANOTHER ENTRYPOINT!!! ========";
+                    }
+
                     $this->addRoomToGridRecursively($otherRoom, $grid, $relativeColumn, $relativeRow);
                 }
             }
