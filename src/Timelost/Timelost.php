@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Yogarine\Timelost;
 
 use Exception;
+use Psr\Log\LoggerInterface;
 use Yogarine\CsvUtils\CsvFile;
 
 class Timelost
 {
-    const DEFAULT_MAPPING = [
+    public const DEFAULT_MAPPING = [
         'Center'   => 'center',
         'Openings' => 'Openings',
         'Link1'    => 'LINK1',
@@ -20,7 +21,7 @@ class Timelost
         'Link6'    => 'Link6',
     ];
 
-    const OG_MAPPING = [
+    public const OG_MAPPING = [
         'Center'   => 'Big Symbol',
         'Openings' => 'Openings',
         'Link1'    => 'A Combo',
@@ -31,7 +32,7 @@ class Timelost
         'Link6'    => 'F Combo',
     ];
 
-    const NO_MAPPING = [
+    public const NO_MAPPING = [
         'Center'   => 1,
         'Openings' => 2,
         'Link1'    => 3,
@@ -42,7 +43,7 @@ class Timelost
         'Link6'    => 8,
     ];
 
-    const MAPPING_NAMES = [
+    public const MAPPING_NAMES = [
         'default' => self::DEFAULT_MAPPING,
         'og'      => self::OG_MAPPING,
         'off'     => self::NO_MAPPING,
@@ -51,33 +52,40 @@ class Timelost
     /**
      * @var int
      */
-    public static $endpointIncrement = 0;
+    public static int $endpointIncrement = 0;
 
     /**
      * @var Room[]
      */
-    public $entrypoints = [];
+    public array $entrypoints = [];
 
     /**
      * @var Room[]
      */
-    public $rooms = [];
+    public array $rooms = [];
 
     /**
      * @var Link[]
      */
-    public $links = [];
+    public array $links = [];
 
-    public function __construct()
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    public function __construct(LoggerInterface $logger)
     {
-
+        $this->logger = $logger;
     }
 
     /**
      * @param Options $options
+     * @return void
+     *
      * @throws Exception
      */
-    public function main(Options $options)
+    public function main(Options $options): void
     {
         foreach ($options->input as $file) {
             $csvFile = new CsvFile($file, $options->headerRows);
@@ -263,7 +271,12 @@ echo "linked\n";
         }
     }
 
-    public function isRoomInGrid(Room $room, array $grid)
+    /**
+     * @param Room $room
+     * @param array $grid
+     * @return bool
+     */
+    public function isRoomInGrid(Room $room, array $grid): bool
     {
         foreach ($grid as $column) {
             foreach ($column as $row) {
@@ -283,7 +296,7 @@ echo "linked\n";
      * @return array
      * @throws Exception
      */
-    public function getRelativeGridCoordinatesForLinkPosition(int $linkPosition, int $column, int $row)
+    public function getRelativeGridCoordinatesForLinkPosition(int $linkPosition, int $column, int $row): array
     {
         switch ($linkPosition) {
             case 1:
@@ -317,7 +330,7 @@ echo "linked\n";
      * @param null $roomId
      * @return bool
      */
-    public function roomWithLinksAlreadyExists(array $links, $roomId = null)
+    public function roomWithLinksAlreadyExists(array $links, $roomId = null): bool
     {
         foreach ($this->rooms as $room) {
             $matchingLinks = $room->getMatchingLinks($links);

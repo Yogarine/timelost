@@ -9,17 +9,17 @@ class Room
     /**
      * @var int
      */
-    public $id;
+    public int $id;
 
     /**
      * @var string
      */
-    public $symbol;
+    public string $symbol;
 
     /**
      * @var Link[]
      */
-    public $links;
+    public array $links;
 
     /**
      * @param int $id
@@ -51,6 +51,7 @@ class Room
 
     /**
      * @param int $amount
+     * @return void
      */
     public function rotate(int $amount): void
     {

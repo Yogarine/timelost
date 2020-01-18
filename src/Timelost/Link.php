@@ -9,17 +9,17 @@ class Link
     /**
      * @var string
      */
-    public $code;
+    public string $code;
 
     /**
      * @var bool
      */
-    public $isOpening;
+    public bool $isOpening;
 
     /**
      * @var Room[]
      */
-    public $rooms = [];
+    public array $rooms = [];
 
     /**
      * @param string $code

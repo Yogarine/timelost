@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Monolog\Logger;
 use Yogarine\Timelost\Options;
 use Yogarine\Timelost\Timelost;
 
@@ -14,7 +15,10 @@ if ($argc < 2 || ! $options->input) {
     exit(1);
 }
 
-$timelost = new Timelost();
+$log = new Logger('cli');
+
+
+$timelost = new Timelost($log);
 $timelost->main($options);
 
 function printUsage(array $argv, int $argc): void

@@ -9,19 +9,22 @@ class Options
     /**
      * @var string[]
      */
-    public $input;
+    public array $input;
 
     /**
      * @var string
      */
-    public $mapping;
+    public string $mapping;
 
     /**
      * @var int
      */
-    public $headerRows;
+    public int $headerRows;
 
-    public function __construct($opt)
+    /**
+     * @param array $opt
+     */
+    public function __construct(array $opt)
     {
         $input = $opt['i'] ?? $opt['input'];
         if (! is_array($input)) {
@@ -33,7 +36,7 @@ class Options
         $this->headerRows = (int) ($opt['h'] ?? $opt['header-rows'] ?? 0);
     }
 
-    public static function fromCommandLineOptions()
+    public static function fromCommandLineOptions(): self
     {
         $options = 'i:m:h:';
         $longopts = [
