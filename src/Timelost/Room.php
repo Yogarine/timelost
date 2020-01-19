@@ -7,9 +7,9 @@ namespace Yogarine\Timelost;
 class Room
 {
     /**
-     * @var int
+     * @var string
      */
-    public int $id;
+    public string $identifier;
 
     /**
      * @var string
@@ -22,22 +22,29 @@ class Room
     public array $links;
 
     /**
-     * @param int $id
+     * @var int[]
+     */
+    public array $openings;
+
+    /**
+     * @param string $identifier
      * @param string $symbol
      * @param Link[] $links
+     * @param int[]  $openings
      */
-    public function __construct(int $id, string $symbol, array $links)
+    public function __construct(string $identifier, string $symbol, array $links, array $openings)
     {
-        $symbol       = $this->parseSymbol($symbol);
-        $this->symbol = strtolower(trim($symbol));
-        $this->links  = $links;
-        $this->id     = $id;
+        $symbol           = Timelost::normalizeSymbol($symbol);
+        $this->symbol     = strtolower(trim($symbol));
+        $this->links      = $links;
+        $this->identifier = $identifier;
+        $this->openings   = $openings;
 
-        foreach ($this->links as $link) {
-            if (count($link->rooms) < 2) {
-                $link->rooms[$this->id] = $this;
-            } else {
-//                echo "[{$id}] Too many rooms for link '{$link->code}'\n";
+        foreach ($this->links as $position => $link) {
+            $link->rooms[$this->identifier] = $this;
+
+            if (count($link->rooms) > 2) {
+                echo "[{$identifier}] Conflicting rooms for link '{$link->code}'\n";
             }
         }
     }
@@ -45,7 +52,22 @@ class Room
     public function __destruct()
     {
         foreach ($this->links as $link) {
-            unset($link->rooms[$this->id]);
+            unset($link->rooms[$this->identifier]);
+        }
+    }
+
+    public function verifyLinks()
+    {
+        foreach ($this->links as $position => $link) {
+            foreach ($link->rooms as $otherRoom) {
+                if ($otherRoom->identifier == $this->identifier) {
+                    continue;
+                }
+
+                $otherPosition = $otherRoom->getLinkPosition($link);
+
+
+            }
         }
     }
 
@@ -117,7 +139,7 @@ class Room
 
             if (0 != $diff) {
 // TODO add this verbose only
-echo "[{$this->id}] Rotating Room by {$diff} ({$position} -> {$referencePosition}) to align it with Room [{$otherRoom->id}]'s Link at position {$matchingLinkPosition}\n";
+echo "[{$this->identifier}] Rotating Room by {$diff} ({$position} -> {$referencePosition}) to align it with Room [{$otherRoom->identifier}]'s Link at position {$matchingLinkPosition}\n";
                 $this->rotate($diff);
             }
         }
@@ -146,14 +168,46 @@ echo "[{$this->id}] Rotating Room by {$diff} ({$position} -> {$referencePosition
         $matchingLinks = [];
 
         foreach ($this->links as $thisLinkPosition => $thisLink) {
-            foreach ($links as $linkPosition => $link) {
-                if ($thisLink->code == $link->code) {
-                    $matchingLinks[$thisLinkPosition] = $thisLink;
+            if (! $thisLink->isBlank()) {
+                foreach ($links as $linkPosition => $link) {
+                    if ($thisLink->code == $link->code) {
+                        $matchingLinks[$thisLinkPosition] = $thisLink;
+                    }
                 }
             }
         }
 
         return $matchingLinks;
+    }
+
+    /**
+     * @param Link[] $links
+     * @return string[]
+     */
+    public function getMatchingLinkCodes(array $links): array
+    {
+        $links = $this->getMatchingLinks($links);
+
+        $linkCodes = [];
+        foreach ($links as $link) {
+            $linkCodes[] = $link->code;
+        }
+
+        return $linkCodes;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasEntrypoint(): bool
+    {
+        foreach ($this->links as $link) {
+            if ($link->isEntrypoint()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

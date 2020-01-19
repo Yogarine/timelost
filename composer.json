@@ -7,6 +7,7 @@
     "require": {
         "php": ">=7.4.0",
         "ext-gd": "*",
+        "meyfa/php-svg": "~0.9.0",
         "monolog/monolog":  "^2.0",
         "yogarine/csv-utils": "^1.0"
     }

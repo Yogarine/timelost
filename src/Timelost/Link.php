@@ -27,8 +27,46 @@ class Link
      */
     public function __construct(string $code, bool $isOpening)
     {
-        $this->code      = strtoupper($code);
+        $this->code      = self::normalizeCode($code, $isOpening);
         $this->isOpening = $isOpening;
+    }
+
+    /**
+     * @param string $linkCode
+     * @param bool   $isOpening
+     * @return string
+     */
+    public static function normalizeCode(string $linkCode, bool $isOpening): string
+    {
+        $linkCode = strtoupper($linkCode);
+        $linkCode = str_replace('_', 'B', $linkCode);
+        if ('BLANK' == $linkCode || preg_match('/^B{1,6}$/', $linkCode)) {
+            $linkCode = 'BBBBBBB';
+        }
+        $linkCode = preg_replace('/[^BCDHPST]/i', '', $linkCode);
+
+        return $linkCode;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEntrypoint(): bool
+    {
+        return $this->isOpening && $this->isBlank();
+    }
+
+    public function isWall(): bool
+    {
+        return ! $this->isOpening && $this->isBlank();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBlank(): bool
+    {
+        return 'BBBBBBB' == $this->code;
     }
 
     /**
@@ -37,8 +75,13 @@ class Link
      */
     public function getOtherRoom(Room $room): ?Room
     {
+        $roomCount = count($this->rooms);
+        if ($roomCount > 2) {
+            $opening = $this->isOpening ? 'open' : 'closed';
+            echo "[{$room->identifier}] Warning: link '{$this->code}' ({$opening}) has more than 2 rooms ";
+        }
         foreach ($this->rooms as $otherRoom) {
-            if ($otherRoom->id != $room->id) {
+            if ($otherRoom->identifier != $room->identifier) {
                 return $otherRoom;
             }
         }
@@ -54,7 +97,7 @@ class Link
         $roomIds = [];
 
         foreach ($this->rooms as $room) {
-            $roomIds[] = $room->id;
+            $roomIds[] = $room->identifier;
         }
 
         return $roomIds;
